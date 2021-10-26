@@ -1,24 +1,22 @@
 package indiv.inch.qrcodegenerate;
 
-import com.google.zxing.WriterException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
+import java.io.File;
 import java.io.IOException;
 
 @RestController
 @CrossOrigin
 @Slf4j
+@RequestMapping("/qrcode")
 public class QRCodeController {
     @GetMapping("/generate")
     public ResponseEntity<byte[]> generateRound(
@@ -32,12 +30,26 @@ public class QRCodeController {
             @RequestParam(name = "middleConnerColor", required = false) String middleConnerColor,
             @RequestParam(name = "innerConnerColor", required = false) String innerConnerColor,
             @RequestParam(name = "type", required = false) String type
-            ) {
+            ) throws IOException {
         byte[] imageBytes = null;
+        BufferedImage backgroundImage = ImageIO.read(new File("d:\\\\backup\\heart.png"));
+        log.info("width: {}, height: {}",backgroundImage.getWidth(),backgroundImage.getHeight());
         try {
             BufferedImage image = QRCodeUtil.generateQRCodeImage(text, width, height, quiet, foreground, background, outerConnerColor, middleConnerColor, innerConnerColor, type);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ImageIO.write(image,"png", out);
+
+            BufferedImage combined = new BufferedImage(backgroundImage.getWidth(),backgroundImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
+            Graphics graphics = combined.getGraphics();
+            graphics.drawImage(backgroundImage, 0,0, null);
+            graphics.drawImage(image, combined.getWidth()/2 - image.getWidth()/2,combined.getHeight()/2 - image.getHeight()/2 + 10, null);
+            graphics.dispose();
+
+            BufferedImage bmp = new BufferedImage(combined.getWidth(),combined.getHeight(), BufferedImage.TYPE_INT_RGB);
+            Graphics graphics1 = bmp.getGraphics();
+            graphics1.drawImage(combined,0,0,null);
+            graphics1.dispose();
+//            ImageIO.write(combined,"png", out);
+            ImageIO.write(bmp,"bmp", out);
             imageBytes = out.toByteArray();
         } catch (Exception e) {
             log.error(e.toString());
@@ -45,7 +57,8 @@ public class QRCodeController {
         }
         return ResponseEntity.ok()
                 .contentType(MediaType.IMAGE_PNG)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + System.currentTimeMillis() + ".png")
+//                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + System.currentTimeMillis() + ".png")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + System.currentTimeMillis() + ".bmp")
                 .body(imageBytes);
     }
 }
