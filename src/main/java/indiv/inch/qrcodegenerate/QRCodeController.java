@@ -32,24 +32,10 @@ public class QRCodeController {
             @RequestParam(name = "type", required = false) String type
             ) throws IOException {
         byte[] imageBytes = null;
-        BufferedImage backgroundImage = ImageIO.read(new File("d:\\\\backup\\heart.png"));
-        log.info("width: {}, height: {}",backgroundImage.getWidth(),backgroundImage.getHeight());
         try {
             BufferedImage image = QRCodeUtil.generateQRCodeImage(text, width, height, quiet, foreground, background, outerConnerColor, middleConnerColor, innerConnerColor, type);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-
-            BufferedImage combined = new BufferedImage(backgroundImage.getWidth(),backgroundImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
-            Graphics graphics = combined.getGraphics();
-            graphics.drawImage(backgroundImage, 0,0, null);
-            graphics.drawImage(image, combined.getWidth()/2 - image.getWidth()/2,combined.getHeight()/2 - image.getHeight()/2 + 10, null);
-            graphics.dispose();
-
-            BufferedImage bmp = new BufferedImage(combined.getWidth(),combined.getHeight(), BufferedImage.TYPE_INT_RGB);
-            Graphics graphics1 = bmp.getGraphics();
-            graphics1.drawImage(combined,0,0,null);
-            graphics1.dispose();
-//            ImageIO.write(combined,"png", out);
-            ImageIO.write(bmp,"bmp", out);
+            ImageIO.write(image,"png", out);
             imageBytes = out.toByteArray();
         } catch (Exception e) {
             log.error(e.toString());
@@ -57,8 +43,7 @@ public class QRCodeController {
         }
         return ResponseEntity.ok()
                 .contentType(MediaType.IMAGE_PNG)
-//                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + System.currentTimeMillis() + ".png")
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + System.currentTimeMillis() + ".bmp")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + System.currentTimeMillis() + ".png")
                 .body(imageBytes);
     }
 }
