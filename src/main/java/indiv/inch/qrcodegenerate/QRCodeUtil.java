@@ -10,7 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -19,17 +18,10 @@ import java.util.Random;
 public class QRCodeUtil {
 
 
-    public static BufferedImage generateQRCodeImage(
-            String text,
-            Integer width,
-            Integer height,
-            Integer quiet,
-            String foreground,
-            String background,
-            String outerConnerColor,
-            String middleConnerColor,
-            String innerConnerColor,
-            String type) throws IOException, WriterException {
+    public static BufferedImage generateQRCodeImage( String text, Integer width, Integer height, Integer quiet,
+                                                     String foreground, String background, String outerConnerColor,
+                                                     String middleConnerColor, String innerConnerColor,
+                                                     String type) throws WriterException {
         if (width == null || height == null) {
             width = 400;
             height = 400;
@@ -47,32 +39,24 @@ public class QRCodeUtil {
         color = ColorUtil.getColor(outerConnerColor);
         Color outer = color == null ? fore : color;
         color = ColorUtil.getColor(middleConnerColor);
-        Color middle = color == null ? back : color;
+        Color middle = color == null ? new Color(back.getRed(),back.getGreen(),back.getBlue()) : color;
         color = ColorUtil.getColor(innerConnerColor);
         Color inner = color == null ? fore : color;
         return generate(text, width, height, quiet, fore, back, outer, middle, inner, type);
     }
 
-    private static BufferedImage generate(
-            String text,
-            Integer width,
-            Integer height,
-            Integer quiet,
-            Color fore,
-            Color back,
-            Color outer,
-            Color middle,
-            Color inner,
-            String type) throws WriterException {
+    private static BufferedImage generate( String text, Integer width, Integer height, Integer quiet, Color fore,
+                                           Color back, Color outer, Color middle,
+                                           Color inner, String type) throws WriterException {
 
         final Map<EncodeHintType, Object> encodingHints = new HashMap<>();
         encodingHints.put(EncodeHintType.CHARACTER_SET, "UTF-8");
         QRCode code = Encoder.encode(text, ErrorCorrectionLevel.H, encodingHints);
-        BufferedImage rectImage = renderQRImage(code, width, height, quiet, fore, back, outer, middle, inner, type);
-        return rectImage;
+        return renderQRImage(code, width, height, quiet, fore, back, outer, middle, inner, type);
     }
 
-    private static BufferedImage renderQRImage(QRCode code, int width, int height, int quietZone, Color fore, Color back, Color outer, Color middle, Color inner, String type) {
+    private static BufferedImage renderQRImage(QRCode code, int width, int height, int quietZone, Color fore,
+                                               Color back, Color outer, Color middle, Color inner, String type) {
         BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics = image.createGraphics();
         graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -110,16 +94,25 @@ public class QRCodeUtil {
                 }
             }
         }
+        if (type.equals("point")) {
+            drawRoundBackground(graphics,topPadding,leftPadding,outputWidth,outputHeight,width,height,innerSize,multiple);
+        }
+        int cornerInnerSize = multiple * FINDER_PATTERN_SIZE;
+        drawFinderPatternCircleStyle(graphics, leftPadding, topPadding, cornerInnerSize, outer, middle, inner, type);
+        drawFinderPatternCircleStyle(graphics, leftPadding + (inputWidth - FINDER_PATTERN_SIZE) * multiple, topPadding, cornerInnerSize, outer, middle, inner, type);
+        drawFinderPatternCircleStyle(graphics, leftPadding, topPadding + (inputHeight - FINDER_PATTERN_SIZE) * multiple, cornerInnerSize, outer, middle, inner, type);
+        graphics.dispose();
+        return image;
+    }
+
+    private static void drawRoundBackground(Graphics graphics, int topPadding, int leftPadding, int outputWidth, int outputHeight,
+                                            int width, int height,int innerSize, int multiple) {
         Random random = new Random();
         for (int y = topPadding - multiple; y > -multiple; y -= multiple) {
             if (y < topPadding) {
                 for (int x = leftPadding; x < outputWidth - leftPadding; x += multiple) {
                     if (checkInside(x,y,width,height,innerSize) && random.nextDouble() > 0.5) {
-                        if (type.equals("rect")) {
-                            graphics.fillRect(x, y, innerSize, innerSize);
-                        } else if (type.equals("point")) {
-                            graphics.fillOval(x, y, innerSize, innerSize);
-                        }
+                        graphics.fillOval(x, y, innerSize, innerSize);
                     }
                 }
             }
@@ -127,41 +120,22 @@ public class QRCodeUtil {
         for (int y = topPadding; y < outputHeight; y += multiple) {
             for (int x = leftPadding - multiple; x > -multiple; x -= multiple) {
                 if (checkInside(x,y,width,height,innerSize) && random.nextDouble() > 0.5) {
-                    if (type.equals("rect")) {
-                        graphics.fillRect(x, y, innerSize, innerSize);
-                    } else if (type.equals("point")) {
-                        graphics.fillOval(x, y, innerSize, innerSize);
-                    }
+                    graphics.fillOval(x, y, innerSize, innerSize);
                 }
             }
             for (int x = outputWidth - leftPadding; x < outputWidth; x += multiple) {
                 if (checkInside(x,y,width,height,innerSize) && random.nextDouble() > 0.5) {
-                    if (type.equals("rect")) {
-                        graphics.fillRect(x, y, innerSize, innerSize);
-                    } else if (type.equals("point")) {
-                        graphics.fillOval(x, y, innerSize, innerSize);
-                    }
+                    graphics.fillOval(x, y, innerSize, innerSize);
                 }
             }
         }
         for (int y = outputHeight - topPadding; y < outputHeight + multiple; y += multiple){
-                for (int x = leftPadding; x < outputWidth - leftPadding; x += multiple) {
-                    if (checkInside(x,y,width,height,innerSize) && random.nextDouble() > 0.5) {
-                        if (type.equals("rect")) {
-                            graphics.fillRect(x, y, innerSize, innerSize);
-                        } else if (type.equals("point")) {
-                            graphics.fillOval(x, y, innerSize, innerSize);
-                        }
-                    }
+            for (int x = leftPadding; x < outputWidth - leftPadding; x += multiple) {
+                if (checkInside(x,y,width,height,innerSize) && random.nextDouble() > 0.5) {
+                    graphics.fillOval(x, y, innerSize, innerSize);
+                }
             }
         }
-
-        int cornerInnerSize = multiple * FINDER_PATTERN_SIZE;
-        drawFinderPatternCircleStyle(graphics, leftPadding, topPadding, cornerInnerSize, outer, middle, inner, type);
-        drawFinderPatternCircleStyle(graphics, leftPadding + (inputWidth - FINDER_PATTERN_SIZE) * multiple, topPadding, cornerInnerSize, outer, middle, inner, type);
-        drawFinderPatternCircleStyle(graphics, leftPadding, topPadding + (inputHeight - FINDER_PATTERN_SIZE) * multiple, cornerInnerSize, outer, middle, inner, type);
-        graphics.dispose();
-        return image;
     }
 
     private static boolean checkInside(int x, int y, int width, int height, int innerSize) {
