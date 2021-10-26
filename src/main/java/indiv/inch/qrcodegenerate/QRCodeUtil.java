@@ -142,11 +142,7 @@ public class QRCodeUtil {
         double centerx = (double) width / 2;
         double centery = (double) height / 2;
         double distance =  Math.sqrt(((double)x - centerx) * ((double)x - centerx) + ((double)y - centery) * ((double)y - centery));
-        if (distance + (double) innerSize> (double) width / 2) {
-            return false;
-        } else {
-            return true;
-        }
+        return distance + (double) innerSize < (double) width / 2;
     }
 
     private static void drawFinderPatternCircleStyle(Graphics2D graphics, int x, int y, int cornerInnerSize, Color outer, Color middle, Color inner, String type) {
