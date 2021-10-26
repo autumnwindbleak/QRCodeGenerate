@@ -6,13 +6,17 @@ import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import com.google.zxing.qrcode.encoder.ByteMatrix;
 import com.google.zxing.qrcode.encoder.Encoder;
 import com.google.zxing.qrcode.encoder.QRCode;
+import lombok.extern.slf4j.Slf4j;
 
 import java.awt.*;
+import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
+@Slf4j
 public class QRCodeUtil {
 
 
@@ -65,7 +69,8 @@ public class QRCodeUtil {
         final Map<EncodeHintType, Object> encodingHints = new HashMap<>();
         encodingHints.put(EncodeHintType.CHARACTER_SET, "UTF-8");
         QRCode code = Encoder.encode(text, ErrorCorrectionLevel.H, encodingHints);
-        return renderQRImage(code, width, height, quiet, fore, back, outer, middle, inner, type);
+        BufferedImage rectImage = renderQRImage(code, width, height, quiet, fore, back, outer, middle, inner, type);
+        return rectImage;
     }
 
     private static BufferedImage renderQRImage(QRCode code, int width, int height, int quietZone, Color fore, Color back, Color outer, Color middle, Color inner, String type) {
@@ -106,11 +111,69 @@ public class QRCodeUtil {
                 }
             }
         }
+        Random random = new Random();
+        for (int y = topPadding - multiple; y > -multiple; y -= multiple) {
+            if (y < topPadding) {
+                for (int x = leftPadding; x < outputWidth - leftPadding; x += multiple) {
+                    if (checkInside(x,y,width,height,innerSize) && random.nextDouble() > 0.5) {
+                        if (type.equals("rect")) {
+                            graphics.fillRect(x, y, innerSize, innerSize);
+                        } else if (type.equals("point")) {
+                            graphics.fillOval(x, y, innerSize, innerSize);
+                        }
+                    }
+                }
+            }
+        }
+        for (int y = topPadding; y < outputHeight; y += multiple) {
+            for (int x = leftPadding - multiple; x > -multiple; x -= multiple) {
+                if (checkInside(x,y,width,height,innerSize) && random.nextDouble() > 0.5) {
+                    if (type.equals("rect")) {
+                        graphics.fillRect(x, y, innerSize, innerSize);
+                    } else if (type.equals("point")) {
+                        graphics.fillOval(x, y, innerSize, innerSize);
+                    }
+                }
+            }
+            for (int x = outputWidth - leftPadding; x < outputWidth; x += multiple) {
+                if (checkInside(x,y,width,height,innerSize) && random.nextDouble() > 0.5) {
+                    if (type.equals("rect")) {
+                        graphics.fillRect(x, y, innerSize, innerSize);
+                    } else if (type.equals("point")) {
+                        graphics.fillOval(x, y, innerSize, innerSize);
+                    }
+                }
+            }
+        }
+        for (int y = outputHeight - topPadding; y < outputHeight + multiple; y += multiple){
+                for (int x = leftPadding; x < outputWidth - leftPadding; x += multiple) {
+                    if (checkInside(x,y,width,height,innerSize) && random.nextDouble() > 0.5) {
+                        if (type.equals("rect")) {
+                            graphics.fillRect(x, y, innerSize, innerSize);
+                        } else if (type.equals("point")) {
+                            graphics.fillOval(x, y, innerSize, innerSize);
+                        }
+                    }
+            }
+        }
+
         int cornerInnerSize = multiple * FINDER_PATTERN_SIZE;
         drawFinderPatternCircleStyle(graphics, leftPadding, topPadding, cornerInnerSize, outer, middle, inner, type);
         drawFinderPatternCircleStyle(graphics, leftPadding + (inputWidth - FINDER_PATTERN_SIZE) * multiple, topPadding, cornerInnerSize, outer, middle, inner, type);
         drawFinderPatternCircleStyle(graphics, leftPadding, topPadding + (inputHeight - FINDER_PATTERN_SIZE) * multiple, cornerInnerSize, outer, middle, inner, type);
+        graphics.dispose();
         return image;
+    }
+
+    private static boolean checkInside(int x, int y, int width, int height, int innerSize) {
+        double centerx = (double) width / 2;
+        double centery = (double) height / 2;
+        double distance =  Math.sqrt(((double)x - centerx) * ((double)x - centerx) + ((double)y - centery) * ((double)y - centery));
+        if (distance + (double) innerSize> (double) width / 2) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     private static void drawFinderPatternCircleStyle(Graphics2D graphics, int x, int y, int cornerInnerSize, Color outer, Color middle, Color inner, String type) {

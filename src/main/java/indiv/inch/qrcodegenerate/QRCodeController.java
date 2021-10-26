@@ -1,5 +1,6 @@
 package indiv.inch.qrcodegenerate;
 
+import com.google.zxing.WriterException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -12,6 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 @RestController
 @CrossOrigin
@@ -38,6 +41,7 @@ public class QRCodeController {
             imageBytes = out.toByteArray();
         } catch (Exception e) {
             log.error(e.toString());
+            e.printStackTrace();
         }
         return ResponseEntity.ok()
                 .contentType(MediaType.IMAGE_PNG)
