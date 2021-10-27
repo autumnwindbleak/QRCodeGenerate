@@ -194,7 +194,7 @@ public class QRCodeUtil {
         //draw top
         for (int y = topPadding - multiple; y > -multiple; y -= multiple) {
             if (y < topPadding) {
-                for (int x = leftPadding; x < outputWidth - leftPadding; x += multiple) {
+                for (int x = 0; x < outputWidth; x += multiple) {
                     if (checkInside(x,y,outputWidth,outputHeight,innerSize) && random.nextDouble() > 0.5) {
                         graphics.fillOval(x, y, innerSize, innerSize);
                     }
